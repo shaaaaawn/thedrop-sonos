@@ -1,9 +1,9 @@
 {
   "manifest_version": 2,
-  "name": "Add to Sonos Queue",
-  "version": "1.0.0",
-  "description": "Add tracks from SoundCloud to your Sonos queue",
-  "homepage_url": "https://github.com/robbi5/add-to-sonos-queue",
+  "name": "TheDrop on Sonos",
+  "version": "0.2.0",
+  "description": "Play TheDrop.club on Sonos.",
+  "homepage_url": "https://github.com/shaaaaawn/thedrop-sonos",
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -21,11 +21,11 @@
       "19": "icons/icon19.png",
       "38": "icons/icon38.png"
     },
-    "default_title": "Add to Sonos Queue",
+    "default_title": "TheDrop on Sonos",
     "default_popup": "page_action/page_action.html"
   },
   "content_scripts": [
-    {
+    /*{
       "matches": ["https://soundcloud.com/*"],
       "css": ["css/add-to-sonos-queue.css"],
       "js": ["js/sc.js"]
@@ -35,7 +35,7 @@
       "css": ["css/add-to-sonos-queue.css"],
       "js": ["js/sc-widget.js"],
       "all_frames": true
-    }
+    }*/
   ],
   "web_accessible_resources": [
     "content_script/loading.gif",

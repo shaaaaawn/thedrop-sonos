@@ -7,6 +7,39 @@ var Sonos = require('sonos').Sonos;
 var SC_CLIENT_ID = '23e4216436888333b85bec82a5e7c075';
 var CURRENT_ITEM = null;
 
+var gotDropUrl = function(url) {
+    console.log("start gotDropUrl - " + url);
+    
+    chrome.runtime.sendMessage({action: 'getDropDetails', url: url}, function(response) {
+    if (response.error) {
+        console.log("this wont work here");
+      if (response.status) { return notATrackPage(); }
+      return failedToLoad();
+    }
+    if (response.kind === 'stream') { var p = "2015-07-10";
+        var soundcloud_id = response.data.p[0].soundcloud_id;
+        console.log("soundcloud track id - " + soundcloud_id);
+        var soundcloud_url = response.data.p[0].url; 
+        console.log("soundcloud url - " + soundcloud_url);
+        gotSoundCloudUrl(soundcloud_url);    
+    } else if (response.kind === 'monthly') {
+        var soundcloud_id = response.data.July[0].soundcloud_id;
+        console.log("soundcloud track id - " + soundcloud_id);
+        var soundcloud_url = response.data.July[0].url; 
+        console.log("soundcloud url - " + soundcloud_url);
+        gotSoundCloudUrl(soundcloud_url);
+    } else if (response.kind === 'track') {
+        var soundcloud_id = response.data.track.soundcloud_id;
+        console.log("soundcloud track id - " + soundcloud_id);
+        var soundcloud_url = response.data.track.url; 
+        console.log("soundcloud url - " + soundcloud_url);
+        gotSoundCloudUrl(soundcloud_url);
+    }
+    
+    //gotSoundCloudTrack(response.data, kind);
+      
+  });
+};
 var gotSoundCloudUrl = function(url) {
   var kind, m = url.match(/soundcloud.com\/([^\/]+)\/likes$/);
   if (m) {
@@ -21,7 +54,7 @@ var gotSoundCloudUrl = function(url) {
       if (response.status) { return notATrackPage(); }
       return failedToLoad();
     }
-    gotSoundCloudTrack(response.data, kind);
+    gotSoundCloudTrack(response.data, kind); 
   });
 };
 
@@ -56,6 +89,7 @@ var gotSoundCloudTrack = function(data, kind) {
   if (kind != 'track' && kind != 'playlist' && kind != 'list') { return notATrackPage(); }
   if (kind == 'list') {
     data = wrapPureTrackList(data);
+      console.log(data);
   }
 
   CURRENT_ITEM = data;
@@ -181,7 +215,9 @@ var addToQueue = function(track) {
 
 // get current url of page
 chrome.tabs.query({active:true, currentWindow:true}, function(tabs) {
-  if (tabs[0].url.indexOf('soundcloud.com') > -1) {
-    gotSoundCloudUrl(tabs[0].url);
+  if (tabs[0].url.indexOf('thedrop.club') > -1) {
+    console.log("send url to gotSoundCloudURL - " + tabs[0].url);
+      gotDropUrl(tabs[0].url);
+      
   }
 });

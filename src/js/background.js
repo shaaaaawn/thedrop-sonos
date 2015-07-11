@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(function() {
       {
         conditions: [
           new chrome.declarativeContent.PageStateMatcher({
-            pageUrl: { hostEquals: 'soundcloud.com' },
+            pageUrl: { hostEquals: 'thedrop.club' },
           })
         ],
         actions: [ new chrome.declarativeContent.ShowPageAction() ]
@@ -51,13 +51,44 @@ function loadSonosDevice() {
   });
 }
 
+function getDropDetails(url, callback) {
+    console.log("getDropDetails Url is - " + url); 
+    var xurl = document.createElement("a"); xurl.href=url; console.log(xurl);
+    var path = xurl.pathname; var search = xurl.search; 
+    var apiurl, kind;
+    var filename = url.substring(url.lastIndexOf('/')+1); console.log("Filename - " + filename);
+    if (path==='/' || path==='') { console.log("no path");
+        apiurl = 'https://thedrop.club/api/v1/tracks.json'; kind = 'stream';
+    } else if (path==='/monthly/'||path==='monthly/'||path==='/monthly'||path==='monthly') { console.log("monthly"); 
+        apiurl = 'https://thedrop.club/api/v1/tracks/monthly.json'; kind='monthly';
+    } else { apiurl = 'https://thedrop.club/api/v1/tracks/' + filename + '.json'; kind='track' } 
+    
+    console.log("apiurl - " + apiurl);
+    request({
+        uri: apiurl,
+        json: true,
+        timeout: 10 * 1000
+    }, function(err, res, data) {
+        if (err) { return callback({error: true}); }
+        if (res.statusCode !== 200) { return callback({error: true, status: res.statusCode}); }
+    console.log("data - "+data);
+      return callback({success: true, data: data, kind: kind});
+      
+  });
+
+}
+
+
 function getUrlDetails(url, callback) {
-  var apiurl;
-  if (url.indexOf('//api.soundcloud.com/') !== -1) {
+console.log("surl is - " + url); var apiurl;
+if (url.indexOf('//api.soundcloud.com/') !== -1) {
     apiurl = url + (url.indexOf('?') !== -1 ? '&' : '?') + 'client_id=' + SC_CLIENT_ID;
+      console.log("1 - "+ apiurl);
   } else {
     apiurl = 'https://api.soundcloud.com/resolve.json?url=' + encodeURIComponent(url) + '&client_id=' + SC_CLIENT_ID;
+      console.log("2 - "+ apiurl);
   }
+  console.log("apiurl - " + apiurl);
   request({
     uri: apiurl,
     json: true,
@@ -65,9 +96,12 @@ function getUrlDetails(url, callback) {
   }, function(err, res, data) {
     if (err) { return callback({error: true}); }
     if (res.statusCode !== 200) { return callback({error: true, status: res.statusCode}); }
-    return callback({success: true, data: data});
+    console.log("data - "+data);
+      return callback({success: true, data: data});
+      
   });
 }
+
 
 
 var htmlEntities = function(str) {
@@ -81,9 +115,11 @@ var htmlEntities = function(str) {
 
 // requires data.id and data.title
 var wrapSoundCloudTrack = function(data) {
-  var trackid = data.id;
+  console.log(data.id + " - " + data.kind + " - " + data.title);
+    var trackid = data.id;
+    console.log("trackid - " + trackid);
   var trackuri = 'x-sonos-http:track%3a' + trackid + '.mp3?sid=160&amp;flags=32';
-
+    console.log("trackuri - " + trackuri);
   var title = htmlEntities(data.title);
   var didl = '<DIDL-Lite xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns:r="urn:schemas-rinconnetworks-com:metadata-1-0/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">'
            + '<item id="00030020track%3a' + trackid + '" restricted="true">'
@@ -92,8 +128,10 @@ var wrapSoundCloudTrack = function(data) {
              + '<desc id="cdudn" nameSpace="urn:schemas-rinconnetworks-com:metadata-1-0/">SA_RINCON40967_X_#Svc40967-0-Token</desc>'
            + '</item>'
            + '</DIDL-Lite>';
+    console.log("didl - " + didl);
    return {uri: trackuri, metadata: didl};
 };
+
 
 // requires data.id and data.title
 var wrapSoundCloudPlaylist = function(data) {
@@ -130,6 +168,7 @@ var addSoundCloudPlaylistToQueue = function(data) {
 
 var play = function(data, sendResponse) {
   var track = wrapSoundCloudTrack(data);
+    console.log("play track - " + track);
   Q.ninvoke(SONOS_DEVICE, 'play', track)
    .then(function() { sendResponse({success: true}); })
    .fail(function() { sendResponse({error: true}); });
@@ -156,7 +195,7 @@ var addToPlaylist = function(track, sendResponse) {
   fn(track)
     .then(function() { sendResponse({success: true}); })
     .fail(function() { sendResponse({error: true}); });
-};
+ };
 
 var openSettings = function(sendResponse) {
   chrome.tabs.create({url: SETTINGS_URL});
@@ -168,6 +207,9 @@ chrome.runtime.onMessage.addListener(
     if (typeof request.action !== "undefined") {
       if (request.action === 'openSettings') {
         openSettings(sendResponse);
+      }
+      if (request.action === 'getDropDetails') {
+        getDropDetails(request.url, sendResponse);
       }
       if (request.action === 'getUrlDetails') {
         getUrlDetails(request.url, sendResponse);
