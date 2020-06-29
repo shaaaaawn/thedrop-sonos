@@ -1,5 +1,6 @@
 TheDrop on Sonos Chrome Extension
 ==================
+**Deprecated - TheDrop Shut Down**
 
 Chrome Extension that adds the ability to add tracks and playlists from TheDrop.club straight to your Sonos queue. Based on the Add to Sonos Queue Extension by <a href="https://github.com/robbi5">robbi5</a>
 
